@@ -1,100 +1,80 @@
 import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @Author: Yizhen Yuan
  * @Date: 2020.05.23
  * @Description:
  */
-public class Game implements Serializable {
-    private static final int serialVersionUID = Main.serialVersionUID;
-    private ArrayList<ArrayList<Player>> teams;
-    //2 teams, each contains a player for now
-    private ArrayList<Player> alivePlayer;
-    private int winnerTeam;
-    private GameState gameState;
-    Record record;
-
-    enum GameState {
-        NotEnd, Draw, WinnerIs;
-    }
-
-    ArrayList<Player> enemyPlayer(Player player) {
-        //called by players to get the alive enemy players
-        return new ArrayList<>(alivePlayer.stream().filter(e -> e.teamId != player.teamId).collect(Collectors.toList()));
-    }
+public abstract class Game implements Serializable {
+    protected static final int serialVersionUID = Main.serialVersionUID;
+    protected ArrayList<Player> players;
 
     Game() {
-        gameState = GameState.NotEnd;
-        teams = new ArrayList<>();
-        teams.add(new ArrayList<>());
-        teams.add(new ArrayList<>());
-        alivePlayer = new ArrayList<>();
+        players = new ArrayList<>();
     }
 
-    void addPlayer(int teamId, Player player) {
-        teams.get(teamId).add(player);
-        alivePlayer.add(player);
-        //link the player with correct team and game
+    void addPlayer(Player player, int teamId) {
         player.teamId = teamId;
-        player.game = this;
+        players.add(player);
+        if(player.bot!=null)player.bot.game=this;
     }
 
-    void recordGame(Record record) {
-        this.record = record;
-        record.records = new ArrayList<>();
+    abstract void startGame();//do the necessary check here and start the game
+
+    Stream<Player> getplayers(int teamId) {
+        return players.stream().filter(e -> e.teamId == teamId);
     }
 
-    int startGame() {
-        for (; gameState == GameState.NotEnd; round()) ;
-
-        if (gameState == GameState.Draw) {
-            //System.out.println("平局");
-            if (record != null) {
-                record.flush(0);
+    int round() {
+        ArrayList<Player> targets = alivePlayers();
+        targets.forEach(e -> {
+            if (e.bot == null) {
+                askOperation(e);
+            } else {
+                e.bot.chooseOperations();
             }
+        });
+        targets.stream().sorted(Comparator.comparingInt(e -> -e.priority)).map(e -> e.currentOperation.operate(e, e.targets)).forEach(System.out::println);
+        targets.forEach(Player::refresh);
+        alivePlayers().forEach(System.out::println);
+        return end();
 
-            return 0;
-        } else {
-            //System.out.println(winnerTeam + "赢了");
-            if (record != null) record.flush(winnerTeam == 0 ? 1 : -1);
-            return winnerTeam * 2 - 1;
+    }
+
+    void askOperation(Player player) {
+        System.out.println("您现在的能量是" + player.energy);
+        System.out.println("敌人的能量是" + getEnemy(player).findFirst().get().energy);
+        System.out.println("您的可选操作有:");
+        for (Operation operation : player.availableOperation()) {
+            System.out.println(Player.operationToString(operation));
+        }
+        player.targets = getEnemy(player).collect(Collectors.toCollection(ArrayList::new));
+        String in;
+        Scanner scanner = Main.scanner;
+        in = scanner.nextLine();
+        in=in.replace("\n","");
+        player.currentOperation = Player.skillMap.get(in);
+        if (player.currentOperation == null) {
+            System.out.println("没有这个操作");
+            assert false;
         }
     }
 
-    void round() {
-        alivePlayer.forEach(Player::getOperation);//ask for operation
-
-        alivePlayer.stream().filter(e -> e.currentOperation == Player.defend).forEach(e -> e.defense = true);//set defense first
-        if (record != null) {
-            //alivePlayer.forEach(System.out::println);
-            //System.out.println("~");
-            record.addOperates(teams.get(0).get(0), teams.get(1).get(0));
+    int end() {
+        if (alivePlayers().stream().findAny().isEmpty()) return 0;//draw, no one wins
+        else {
+            int anyTeam = alivePlayers().stream().findFirst().get().teamId;
+            if (alivePlayers().stream().allMatch(e -> e.teamId == anyTeam)) return anyTeam;
+            return -1;//the game is not ended yet
         }
-        String[] skillInfo = alivePlayer.stream().map(e -> e.currentOperation.operate(e, e.targets)).toArray(String[]::new);//do the operation and get returned string
-
-        alivePlayer.forEach(Player::refresh);//refresh them and set alive
-
-        alivePlayer = new ArrayList<>(alivePlayer.stream().filter(e -> e.alive).collect(Collectors.toList()));//delete dead players
-        if (alivePlayer.size() == 0) {
-            //no one alive
-            gameState = GameState.Draw;
-        } else {
-            int aliveTeam = alivePlayer.get(0).teamId;//assume only one team alive
-            if (alivePlayer.stream().allMatch(e -> e.teamId == aliveTeam)) {
-                //no other alive team
-                gameState = GameState.WinnerIs;
-                winnerTeam = aliveTeam;
-            }
-        }
-        if (record == null) print(skillInfo);
     }
 
-    void print(String[] skillInfo) {
-
-        //TODO: should be GUI
-        Arrays.stream(skillInfo).forEach(System.out::println);
-        alivePlayer.forEach(System.out::println);
+    ArrayList<Player> alivePlayers() {
+        return players.stream().filter(e -> e.alive).collect(Collectors.toCollection(ArrayList::new));
     }
+
+    abstract Stream<Player> getEnemy(Player target);
 }

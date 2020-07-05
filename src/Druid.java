@@ -20,7 +20,7 @@ public class Druid extends Player {
             for (Player player : e) {
                 int rand = GameRandom.random(100);
                 if (rand < 75 + ((Druid) i).buff) {
-                    player.healthDecrease(player.defense ? (player.getHealth() / 2 > 1 ? player.getHealth() / 2 : 1) + 1 : player.getHealth() / 2 > 1 ? player.getHealth() / 2 : 1);
+                    player.healthDecrease(Math.max(player.getHealth()/2,1)+(player.defense?1:0));
                     hit.add(player);
                 }
 
@@ -32,11 +32,12 @@ public class Druid extends Player {
             i.energy -= 2;
             Player player = e.get(0);
             int rand = GameRandom.random(100);
+            String answer=i.name+"对"+player.name+"使用了影沐";
             if (rand < 75 + ((Druid) i).buff) {
                 player.healthDecrease(player.defense ? 3 : 2);
-                return i.name + "使用了影沐";
+                return answer;
             }
-            return i.name + "使用了影沐，但未命中";
+            return answer + "，但未命中";
 
         });
     }
@@ -46,7 +47,7 @@ public class Druid extends Player {
     }
 
     Druid(Bot bot) {
-        this("AI" + (++count), bot);
+        this(DEFAULT_NAME+ (++count), bot);
     }
 
     Druid(String name) {
@@ -72,7 +73,8 @@ public class Druid extends Player {
     }
 
     @Override
-    String hash() {
-        return "德鲁伊" + getHealth() + "血" + energy + "能量";
+    public int hashCode() {
+        return energy*100+getHealth();
     }
+
 }

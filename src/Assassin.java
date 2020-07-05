@@ -19,11 +19,11 @@ public class Assassin extends Player {
                 Can be used only once, draw no energy(free).
                 deal 2 damage if enemy is not defend
              */
-            assert i instanceof Assassin;
+            assert i instanceof Assassin&&e.size()==1;
             ((Assassin) i).countForBeiCi--;
             Player target=e.get(0);
             if(!target.defense)target.healthDecrease(2);
-            return i.name+"使用了背刺";
+            return i.name+"对"+target.name+"使用了背刺";
         });
         skillMap.put("瞬杀",(i,e)->{
             /*
@@ -33,21 +33,23 @@ public class Assassin extends Player {
                 90% deal 4/1 damage if target is also Assasin it deal 2 damage even with defend(which finally become 1 damage
                 due to the Assasin`s damage reduce)
              */
+            assert e.size()==1&&i instanceof Assassin;
             int rand= GameRandom.random(100);
             Player target=e.get(0);
             i.energy--;
+            String answer=i.name+"对"+target.name+"使用了瞬杀";
             if(rand==0){
                 target.healthDecrease(Short.MAX_VALUE);
                 target.name= LOSERS_NAME +target.name;
-                return i.name+"使用了瞬杀，并触发了秒杀";
+                return answer+"，并触发了秒杀";
             }else if (rand<10){
                 target.healthDecrease(target.defense?6:10);
-                return i.name+"使用了瞬杀，并触发了暴击";
+                return answer+"，并触发了暴击";
             }else if (rand<90){
                 target.healthDecrease(target.defense?target instanceof Assassin?2:1:4);
-                return i.name+"使用了瞬杀";
+                return answer;
             }else {
-                return i.name+"使用了瞬杀，miss了";
+                return answer+"，miss了";
             }
         });
     }
@@ -56,13 +58,14 @@ public class Assassin extends Player {
         this(DEFAULT_NAME +(++count),null);
     }
     Assassin(Bot bot){
-        this("AI"+(++count),bot);
+        this(DEFAULT_NAME+(++count),bot);
     }
     Assassin(String name){
         this(name,null);
     }
     Assassin(String name,Bot bot){
         super(name, START_HEALTH, START_ENERGY,bot);
+
         countForBeiCi=1;
     }
 
@@ -85,7 +88,7 @@ public class Assassin extends Player {
     }
 
     @Override
-    String hash() {
-        return "刺客"+getHealth()+"血"+energy+"能量,还有"+countForBeiCi+"次背刺";
+    public int hashCode() {
+        return countForBeiCi+energy*2;
     }
 }

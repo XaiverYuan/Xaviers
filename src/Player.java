@@ -1,20 +1,19 @@
 import java.io.Serializable;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.util.*;
+import java.util.stream.Stream;
 
 /**
  * @Author: Yizhen Yuan
  * @Date: 2020.05.23
- * @Description: the parent class of all kinds of Players(职业)
+ * @Description: the parent class of all kinds of Players
  */
 public abstract class Player implements Serializable{
     private static final int serialVersionUID = Main.serialVersionUID;
     boolean alive;
-    Game game;//the game this player is in
     Bot bot;//if this is null then it is played by human, or it is played by ai
     int teamId;//the id of the team
     int energy;//use to cast abilities
+    int priority;//highest priority means they move first.
     private int health;//died when it is <=0
     /* the reason health is private here is Some kind of player has deduction on damage taken.
         i.e. Assasin take one less damage.
@@ -24,6 +23,7 @@ public abstract class Player implements Serializable{
     static final Operation defend = (i, e) -> {
         //everyone should be able to defend
         i.defense = true;
+        i.priority=10;
         return i.name + "防御了";
     };
     static final Operation gain = (i, e) -> {
@@ -39,27 +39,6 @@ public abstract class Player implements Serializable{
     }
     boolean defense;//if someone is defending, this would be true, this will be set to false after a round complete
     String name;
-
-
-    void getOperation() {
-        //get operation for this round either from AI or interface
-
-        ArrayList<Player> enemy=new ArrayList<>();
-        //TODO: this is hard code, should be changed
-        enemy.add(this.game.enemyPlayer(this).get(0));
-        targets=enemy;
-        if (bot!=null){
-            //get from Bot
-            this.currentOperation=bot.chooseOperations();
-        }else {
-            //get from Main interface.
-            this.currentOperation=Main.askOperation(this);
-        }
-    }
-    Player(String name, int startHealth, int startEnergy) {
-        //create a human player
-        this(name,startHealth,startEnergy,null);
-    }
     Player(String name, int startHealth, int startEnergy,Bot bot) {
         //create an AI player
         this.alive = true;
@@ -73,34 +52,22 @@ public abstract class Player implements Serializable{
 
     abstract ArrayList<Operation> availableOperation();
     //return all operation that is available now
-
-    Operation randomOperation() {
-        //return a random operation that is available
-        ArrayList<Operation> operations = availableOperation();
-        int rand = GameRandom.random(operations.size());
-        return operations.get(rand);
-
-    }
-    abstract String hash();
-    //return a String that describe the state of player
-
+    @Override
+    public abstract int hashCode();//the hashcode should be smaller than 32768
     void healthDecrease(int amount) {
         if (amount <= 0) return;
         health -= amount;
     }
-
     int getHealth() {
         return health;
     }
-
     boolean refresh() {
         //reset defense and check for alive
         if (getHealth() <= 0) alive = false;
         defense = false;
+        priority=0;
         return alive;
     }
-
-
     @Override
     public String toString() {
         return "\tTeam"+teamId+" "+name + ":" + health + "血"+energy + "能量" +operationToString(currentOperation);

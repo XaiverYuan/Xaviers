@@ -62,9 +62,9 @@ public class Record implements Serializable {
         Operation operation;
 
         roundRecord(Player p1, Player p2) {
-            player1Hash = p1.hash();
+          /*  player1Hash = p1.hash();
             player2Hash = p2.hash();
-            operation = p1.currentOperation;
+            operation = p1.currentOperation;*/
         }
 
         @Override

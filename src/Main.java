@@ -16,7 +16,17 @@ public class Main {
     public static final int serialVersionUID = 5000;
     static Scanner scanner = new Scanner(System.in);
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
+        SoloGame soloGame=new SoloGame();
+        Player p1=new Druid();
+        Player p2=new Assassin(new Bot());
+        soloGame.addPlayer(p1,1);
+        soloGame.addPlayer(p2,2);
+        soloGame.startGame();
+
+    }
+
+   /* public static void main(String[] args) throws Exception {
 
         long startTime = System.currentTimeMillis(); //获取开始时间
 
@@ -25,7 +35,7 @@ public class Main {
         long endTime = System.currentTimeMillis(); //获取结束时间
 
         System.out.println("程序运行时间： " + (endTime - startTime) + "ms");
-    }
+    }*/
 
     private static void OracleLearning(Player player1, Player player2) throws Exception {
         OracleLearning(player1, player2, 5, 100, player1.getClass().getName() + new Date().getTime(), player1.getClass().getName() + new Date().getTime());
@@ -70,7 +80,8 @@ public class Main {
     }
 
     private static Record learn(HashMap<String, HashMap<String, ArrayList<Integer>>> record1, HashMap<String, HashMap<String, ArrayList<Integer>>> record2, Player p1, Player p2, int k) throws Exception {
-        int count[] = new int[3];
+        return null;
+        /*int count[] = new int[3];
         Record record = new Record();
         final int single = 10000;
 
@@ -97,7 +108,7 @@ public class Main {
         System.out.println(p1.getClass().getName() + "赢了" + count[0]);
         System.out.println("平局" + count[1]);
         System.out.println(p2.getClass().getName() + "赢了" + count[2]);
-        return record;
+        return record;*/
     }
 
     static Operation askOperation(Player player) {
