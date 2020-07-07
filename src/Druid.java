@@ -6,6 +6,7 @@ import java.util.ArrayList;
  * @Description:
  */
 public class Druid extends Player {
+    private static final long serialVersionUID = Main.serialVersionUID;
     private static final int START_HEALTH = 4;
     private static final int START_ENERGY = 0;
     public static final String DEFAULT_NAME = "德鲁伊";
@@ -72,9 +73,7 @@ public class Druid extends Player {
         return operations;
     }
 
-    @Override
-    public int hashCode() {
-        return energy*100+getHealth();
-    }
+
+
 
 }

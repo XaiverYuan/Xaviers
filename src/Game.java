@@ -9,26 +9,37 @@ import java.util.stream.Stream;
  * @Description:
  */
 public abstract class Game implements Serializable {
-    protected static final int serialVersionUID = Main.serialVersionUID;
+    protected static final long serialVersionUID = Main.serialVersionUID;
     protected ArrayList<Player> players;
-
-    Game() {
+    protected Record record;
+    protected boolean print;
+    protected Game() {
         players = new ArrayList<>();
     }
 
-    void addPlayer(Player player, int teamId) {
-        player.teamId = teamId;
-        players.add(player);
-        if(player.bot!=null)player.bot.game=this;
+    protected Game(Record record) {
+        this.record = record;
+        players = new ArrayList<>();
     }
 
-    abstract void startGame();//do the necessary check here and start the game
+    protected void addPlayer(Player player, int teamId) {
+        assert teamId > 0;
+        player.teamId = teamId;
+        players.add(player);
+        if (player.bot != null) player.bot.game = this;
+    }
+    public void println(String a){
+        if(print)
+        System.out.println(a);
+    }
 
-    Stream<Player> getplayers(int teamId) {
+    abstract protected int startGame();//do the necessary check here and start the game
+
+    protected Stream<Player> getplayers(int teamId) {
         return players.stream().filter(e -> e.teamId == teamId);
     }
 
-    int round() {
+    protected int round() {
         ArrayList<Player> targets = alivePlayers();
         targets.forEach(e -> {
             if (e.bot == null) {
@@ -37,37 +48,30 @@ public abstract class Game implements Serializable {
                 e.bot.chooseOperations();
             }
         });
-        targets.stream().sorted(Comparator.comparingInt(e -> -e.priority)).map(e -> e.currentOperation.operate(e, e.targets)).forEach(System.out::println);
+        if (record != null) {
+            record.update();
+        }
+        targets.stream().sorted(Comparator.comparingInt(e -> -e.priority)).map(e -> e.currentOperation.operate(e, e.targets)).forEach(this::println);
         targets.forEach(Player::refresh);
-        alivePlayers().forEach(System.out::println);
+        alivePlayers().stream().map(Player::toString).forEach(this::println);
+
         return end();
 
     }
 
-    void askOperation(Player player) {
-        System.out.println("您现在的能量是" + player.energy);
-        System.out.println("敌人的能量是" + getEnemy(player).findFirst().get().energy);
-        System.out.println("您的可选操作有:");
-        for (Operation operation : player.availableOperation()) {
-            System.out.println(Player.operationToString(operation));
-        }
-        player.targets = getEnemy(player).collect(Collectors.toCollection(ArrayList::new));
-        String in;
-        Scanner scanner = Main.scanner;
-        in = scanner.nextLine();
-        in=in.replace("\n","");
-        player.currentOperation = Player.skillMap.get(in);
-        if (player.currentOperation == null) {
-            System.out.println("没有这个操作");
-            assert false;
-        }
-    }
+    abstract void askOperation(Player player);
 
     int end() {
-        if (alivePlayers().stream().findAny().isEmpty()) return 0;//draw, no one wins
+        if (alivePlayers().stream().findAny().isEmpty()) {
+            if (record != null) record.flush(0);
+            return 0;
+        }//draw, no one wins
         else {
             int anyTeam = alivePlayers().stream().findFirst().get().teamId;
-            if (alivePlayers().stream().allMatch(e -> e.teamId == anyTeam)) return anyTeam;
+            if (alivePlayers().stream().allMatch(e -> e.teamId == anyTeam)) {
+                record.flush(anyTeam);
+                return anyTeam;
+            }
             return -1;//the game is not ended yet
         }
     }
@@ -76,5 +80,5 @@ public abstract class Game implements Serializable {
         return players.stream().filter(e -> e.alive).collect(Collectors.toCollection(ArrayList::new));
     }
 
-    abstract Stream<Player> getEnemy(Player target);
+    abstract ArrayList<Player> getEnemy(Player target);
 }

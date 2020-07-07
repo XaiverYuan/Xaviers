@@ -1,30 +1,67 @@
+import java.util.ArrayList;
+import java.util.Scanner;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class SoloGame extends Game{
+public final class SoloGame extends Game{
+
+    public SoloGame(){
+        super();
+    }
+    public SoloGame(SoloRecord soloRecord) {
+        super(soloRecord);
+    }
+
     @Override
-    Stream<Player> getEnemy(Player target) {
-        Stream<Player> answer=alivePlayers().stream().filter(e->e!=target);
-        assert answer.count()==1;
+    ArrayList<Player> getEnemy(Player target) {
+        ArrayList<Player> answer=alivePlayers().stream().filter(e->e!=target).collect(Collectors.toCollection(ArrayList::new));
+        assert answer.size()==1;
         return answer;
     }
 
     @Override
-    void addPlayer(Player player, int teamId) {
+    protected void addPlayer(Player player, int teamId) {
         super.addPlayer(player, teamId);
         assert alivePlayers().stream().filter(e->e.teamId==teamId).count()==1;
         assert alivePlayers().stream().map(e->e.teamId).distinct().count()<=2;
     }
 
     @Override
-    void startGame() {
+    protected int startGame() {
         assert players.size()==2;
         assert players.get(0).teamId!=players.get(1).teamId;
+        if(record==null){
+            record=new SoloRecord(players.get(0),players.get(1));
+        }
+        assert record instanceof SoloRecord;
+        record.start();
         int result;
         while ((result=round())<0);
         if(result!=0){
-            System.out.println(getplayers(result).findFirst().get().name+"赢了");
+            this.println(getplayers(result).findFirst().get().name+"赢了");
         }else {
-            System.out.println("平局");
+            this.println("平局");
+        }
+        return result;
+    }
+
+    @Override
+    void askOperation(Player player) {
+        System.out.println("您现在的能量是" + player.energy);
+        System.out.println("敌人的能量是" + getEnemy(player).get(0).energy);
+        System.out.println("您的可选操作有:");
+        for (Operation operation : player.availableOperation()) {
+            System.out.println(Player.operationToString(operation));
+        }
+        player.targets = getEnemy(player);
+        String in;
+        Scanner scanner = Main.scanner;
+        in = scanner.nextLine();
+        in = in.replace("\n", "");
+        player.currentOperation = Player.skillMap.get(in);
+        if (player.currentOperation == null) {
+            System.out.println("没有这个操作");
+            assert false;
         }
     }
 }

@@ -6,6 +6,7 @@ import java.util.ArrayList;
  * @Description:
  */
 public class Assassin extends Player {
+    private static final long serialVersionUID = Main.serialVersionUID;
     private static final int START_HEALTH =1;
     private static final int START_ENERGY =0;
     public static final String DEFAULT_NAME ="刺客";
@@ -88,7 +89,7 @@ public class Assassin extends Player {
     }
 
     @Override
-    public int hashCode() {
-        return countForBeiCi+energy*2;
+    String hash() {
+        return super.hash()+countForBeiCi+"背刺";
     }
 }

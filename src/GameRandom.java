@@ -1,5 +1,7 @@
 import java.util.HashMap;
 import java.util.List;
+import java.util.function.BinaryOperator;
+import java.util.stream.Collectors;
 
 /**
  * @Author: Yizhen Yuan
@@ -18,17 +20,17 @@ public class GameRandom {
         return Math.random() * max;
     }
 
-    static String random(HashMap<String, Double> map) {
-        return random(map,1);
+    static <E> E random(HashMap<E, Double> map) {
+        double total=map.values().stream().reduce(0.0,Double::sum);
+        double rands=Math.random()*total;
+        for (E e : map.keySet()) {
+            if(map.get(e)>=rands)
+                return e;
+            rands-=map.get(e);
+        }
+        assert false;
+        return null;
     }
 
-    static String random(HashMap<String, Double> map, double max) {
-        double rand = randomDouble(max);
-        for (String s : map.keySet()) {
-            final double temp = map.get(s);
-            if (temp > rand) return s;
-            else rand -= temp;
-        }
-        return map.keySet().iterator().next();
-    }
+
 }

@@ -8,7 +8,7 @@ import java.util.stream.Stream;
  * @Description: the parent class of all kinds of Players
  */
 public abstract class Player implements Serializable{
-    private static final int serialVersionUID = Main.serialVersionUID;
+    private static final long serialVersionUID = Main.serialVersionUID;
     boolean alive;
     Bot bot;//if this is null then it is played by human, or it is played by ai
     int teamId;//the id of the team
@@ -52,9 +52,10 @@ public abstract class Player implements Serializable{
 
     abstract ArrayList<Operation> availableOperation();
     //return all operation that is available now
-    @Override
-    public abstract int hashCode();//the hashcode should be smaller than 32768
-    void healthDecrease(int amount) {
+    String hash(){
+        return this.getClass().getName()+getHealth()+"血"+energy+"能量";
+    }
+     void healthDecrease(int amount) {
         if (amount <= 0) return;
         health -= amount;
     }

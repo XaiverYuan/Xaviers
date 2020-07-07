@@ -1,18 +1,17 @@
-import java.io.Serializable;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
 
-public class SoloRecord implements Serializable {
-    static final long serialVersionUID = Main.serialVersionUID;
+public class SoloRecord extends Record {
     Class<? extends Player> class1;
     Class<? extends Player> class2;
-    HashMap<Integer, HashMap<String, int[]>[]> learnMap;
+    HashMap<String, HashMap<String, int[]>[]> learnMap;
     transient ArrayList<int[]>[] inGameOperations;
     transient Player p1;
     transient Player p2;
-
+    private static final long serialVersionUID = Main.serialVersionUID;
     /*
         key:player1.hash and player2.hash(int array length is always 2)
         value:an array of hashmap size 2;
@@ -21,7 +20,9 @@ public class SoloRecord implements Serializable {
             value:an array of hashmap size 3;
                 corresponding to their lose/draw/win;
      */
-
+    SoloRecord(String address){
+        load(address);
+    }
     SoloRecord(Class<? extends Player> class1, Class<? extends Player> class2) {
         if (class1.getName().compareTo(class2.getName()) > 0) {
             Class<? extends Player> anon = class1;
@@ -35,6 +36,13 @@ public class SoloRecord implements Serializable {
 
     SoloRecord(Player p1, Player p2) {
         this(p1.getClass(), p2.getClass());
+        if (p1.getClass().getName().compareTo(p2.getClass().getName()) > 0) {
+            this.p1 = p2;
+            this.p2 = p1;
+        } else {
+            this.p1 = p1;
+            this.p2 = p2;
+        }
     }
 
     private static HashMap<String, int[]>[] hashMapClone(HashMap<String, int[]>[] target) {
@@ -84,11 +92,11 @@ public class SoloRecord implements Serializable {
         assert soloRecords.stream().allMatch(e -> e.class1 == class1 && e.class2 == class2);
         SoloRecord answer = new SoloRecord(class1, class2);
         for (SoloRecord soloRecord : soloRecords) {
-            for (Integer ints : soloRecord.learnMap.keySet()) {
-                if (!answer.learnMap.containsKey(ints)) {
-                    answer.learnMap.put(ints, hashMapClone(soloRecord.learnMap.get(ints)));
+            for (String string : soloRecord.learnMap.keySet()) {
+                if (!answer.learnMap.containsKey(string)) {
+                    answer.learnMap.put(string, hashMapClone(soloRecord.learnMap.get(string)));
                 } else {
-                    answer.learnMap.put(ints,hashMapAdd(answer.learnMap.get(ints), soloRecord.learnMap.get(ints)));
+                    answer.learnMap.put(string, hashMapAdd(answer.learnMap.get(string), soloRecord.learnMap.get(string)));
                 }
             }
         }
@@ -103,33 +111,82 @@ public class SoloRecord implements Serializable {
         this.p2 = p2;
     }
 
-    int hash() {
-        return p1.hashCode() << 15 + p2.hashCode();
+    String hash() {
+        return p1.hash() + p2.hash();
+    }
+
+    HashMap<String, int[]> getMap(Player target,Player enemy) {
+        boolean reverse = target.getClass().getName().compareTo(enemy.getClass().getName()) > 0;
+        if(reverse) {
+            p1 = enemy;
+            p2 = target;
+        }else {
+            p1=target;
+            p2=enemy;
+        }
+        HashMap<String, int[]>[] raw=learnMap.get(hash());
+
+        return raw==null?null:raw[reverse?1:0];
+    }
+
+    @Override
+    void save(String file) {
+        try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(new FileOutputStream(new File(file)))) {
+            objectOutputStream.writeObject(this);
+        } catch (Exception e) {
+            e.printStackTrace();
+            assert false;
+        }
+    }
+
+    @Override
+    void load(String file) {
+        try (ObjectInputStream objectInputStream = new ObjectInputStream(new FileInputStream(new File(file)))) {
+            Object anon = objectInputStream.readObject();
+            assert anon instanceof SoloRecord;
+            this.learnMap = ((SoloRecord) anon).learnMap;
+            this.class1 = ((SoloRecord) anon).class1;
+            this.class2 = ((SoloRecord) anon).class2;
+        } catch (Exception e) {
+            e.printStackTrace();
+            assert false;
+        }
+    }
+
+    @Override
+    void start() {
+        assert this.p1 != null && this.p2 != null;
+        inGameOperations = new ArrayList[2];
+        inGameOperations[0] = new ArrayList<>();
+        inGameOperations[1] = new ArrayList<>();
     }
 
     void update() {
         HashMap<String, int[]>[] target = learnMap.get(hash());
-        if(target==null){
-            HashMap<String, int[]> anon1=new HashMap<>();
-            HashMap<String, int[]> anon2=new HashMap<>();
-            learnMap.put(hash(),new HashMap[]{anon1,anon2});
+        if (target == null) {
+            HashMap<String, int[]> anon1 = new HashMap<>();
+            HashMap<String, int[]> anon2 = new HashMap<>();
+            learnMap.put(hash(), new HashMap[]{anon1, anon2});
             target = learnMap.get(hash());
         }
-        int[] anon1=target[0].get(Player.operationToString(p1.currentOperation));
-        if(anon1==null){
-            target[0].put(Player.operationToString(p1.currentOperation),new int[3]);
+        int[] anon1 = target[0].get(Player.operationToString(p1.currentOperation));
+        if (anon1 == null) {
+            target[0].put(Player.operationToString(p1.currentOperation), new int[3]);
+            anon1 = target[0].get(Player.operationToString(p1.currentOperation));
         }
         inGameOperations[0].add(anon1);
-        int[] anon2=target[0].get(Player.operationToString(p1.currentOperation));
-        if(anon2==null){
-            target[0].put(Player.operationToString(p1.currentOperation),new int[3]);
+        int[] anon2 = target[1].get(Player.operationToString(p2.currentOperation));
+        if (anon2 == null) {
+            target[1].put(Player.operationToString(p2.currentOperation), new int[3]);
+            anon2 = target[1].get(Player.operationToString(p2.currentOperation));
         }
-        inGameOperations[0].add(anon2);
+        inGameOperations[1].add(anon2);
     }
 
-    void flush(Player player) {
+    @Override
+    void flush(int teamId) {
         //if it is null, then it means draw
-        int adds = player == null ? 1 : player == p1 ? 0 : player == p2 ? 2 : -100;
+        int adds = teamId == 0 ? 1 : teamId == p1.teamId ? 2 : teamId == p2.teamId ? 0 : -100;
         assert adds != -100;
         for (int[] ints : inGameOperations[0]) {
             ints[adds]++;
