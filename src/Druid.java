@@ -16,24 +16,26 @@ public class Druid extends Player {
     static {
         skillMap.put("月坠", (i, e) -> {
             assert i instanceof Druid;
+            assert i.energy>=3;
             i.energy -= 3;
             ArrayList<Player> hit = new ArrayList<>();
             for (Player player : e) {
                 int rand = GameRandom.random(100);
                 if (rand < 75 + ((Druid) i).buff) {
-                    player.healthDecrease(Math.max(player.getHealth()/2,1)+(player.defense?1:0));
+                    player.healthDecrease(Math.max(player.getHealth() / 2, 1) + (player.defense ? 1 : 0));
                     hit.add(player);
                 }
-
             }
             return i.name + "使用了月坠,命中了" + hit.size() + "人" + hit;
         });
         skillMap.put("影沐", (i, e) -> {
             assert i instanceof Druid;
+            assert i.energy>=2;
+            assert e.size()==1;
             i.energy -= 2;
             Player player = e.get(0);
             int rand = GameRandom.random(100);
-            String answer=i.name+"对"+player.name+"使用了影沐";
+            String answer = i.name + "对" + player.name + "使用了影沐";
             if (rand < 75 + ((Druid) i).buff) {
                 player.healthDecrease(player.defense ? 3 : 2);
                 return answer;
@@ -47,16 +49,16 @@ public class Druid extends Player {
         this(DEFAULT_NAME + (++count), null);
     }
 
-    Druid(Bot bot) {
-        this(DEFAULT_NAME+ (++count), bot);
+    Druid(SoloBot soloBot) {
+        this(DEFAULT_NAME + (++count), soloBot);
     }
 
     Druid(String name) {
         this(name, null);
     }
 
-    Druid(String name, Bot bot) {
-        super(name, START_HEALTH, START_ENERGY, bot);
+    Druid(String name, SoloBot soloBot) {
+        super(name, START_HEALTH, START_ENERGY, soloBot);
     }
 
     @Override
@@ -67,13 +69,6 @@ public class Druid extends Player {
         //those two operation is always available
         if (energy >= 2) operations.add(skillMap.get("影沐"));
         if (energy >= 3) operations.add(skillMap.get("月坠"));
-        if (getHealth() == 4 && energy >= 3) {
-            assert operations.size() == 4;
-        }
         return operations;
     }
-
-
-
-
 }

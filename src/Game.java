@@ -54,21 +54,20 @@ public abstract class Game implements Serializable {
         targets.stream().sorted(Comparator.comparingInt(e -> -e.priority)).map(e -> e.currentOperation.operate(e, e.targets)).forEach(this::println);
         targets.forEach(Player::refresh);
         alivePlayers().stream().map(Player::toString).forEach(this::println);
-
         return end();
-
     }
 
     abstract void askOperation(Player player);
 
     int end() {
-        if (alivePlayers().stream().findAny().isEmpty()) {
+        final List<Player> alives=alivePlayers();
+        if (alives.stream().findAny().isEmpty()) {
             if (record != null) record.flush(0);
             return 0;
         }//draw, no one wins
         else {
-            int anyTeam = alivePlayers().stream().findFirst().get().teamId;
-            if (alivePlayers().stream().allMatch(e -> e.teamId == anyTeam)) {
+            int anyTeam = alives.stream().findFirst().get().teamId;
+            if (alives.stream().allMatch(e -> e.teamId == anyTeam)) {
                 record.flush(anyTeam);
                 return anyTeam;
             }
