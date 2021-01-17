@@ -7,11 +7,6 @@ import java.util.HashMap;
 public class SoloRecord extends Record {
     Class<? extends Player> class1;
     Class<? extends Player> class2;
-    HashMap<String, HashMap<String, int[]>[]> learnMap;
-    transient ArrayList<int[]>[] inGameOperations;
-    transient Player p1;
-    transient Player p2;
-    private static final long serialVersionUID = Main.serialVersionUID;
     /*
         key:player1.hash and player2.hash(int array length is always 2)
         value:an array of hashmap size 2;
@@ -20,9 +15,23 @@ public class SoloRecord extends Record {
             value:an array of hashmap size 3;
                 corresponding to their lose/draw/win;
      */
-    SoloRecord(String address){
+    HashMap<String, HashMap<String, int[]>[]> learnMap;
+    /*
+        The int array here corresponding to the operation players took
+        during the game. It is somehow used like a pointer.
+        When the game ends, all these array would be updated due to result
+        of the game (win, draw, lose)
+     */
+    transient ArrayList<int[]>[] inGameOperations;
+    transient Player p1;
+    transient Player p2;
+    private static final long serialVersionUID = Main.serialVersionUID;
+
+
+    SoloRecord(String address) {
         load(address);
     }
+
     SoloRecord(Class<? extends Player> class1, Class<? extends Player> class2) {
         if (class1.getName().compareTo(class2.getName()) > 0) {
             Class<? extends Player> anon = class1;
@@ -55,9 +64,7 @@ public class SoloRecord extends Record {
 
     private static HashMap<String, int[]> hashMapClone(HashMap<String, int[]> target) {
         HashMap<String, int[]> anonVal = new HashMap<>();
-        for (String s : target.keySet()) {
-            anonVal.put(s, target.get(s).clone());
-        }
+        target.forEach((k, v) -> anonVal.put(k, v.clone()));
         return anonVal;
     }
 
@@ -69,20 +76,20 @@ public class SoloRecord extends Record {
         return answer;
     }
 
-    private static HashMap<String, int[]> hashMapAdd(HashMap<String, int[]> e1, HashMap<String, int[]> e2) {
+     private static HashMap<String, int[]> hashMapAdd(HashMap<String, int[]> e1, HashMap<String, int[]> e2) {
         HashMap<String, int[]> e = hashMapClone(e1);
-        for (String s : e2.keySet()) {
-            if (e.containsKey(s)) {
-                int[] raw = e.get(s).clone();
-                int[] addOn = e2.get(s).clone();
+        e2.forEach((k,v)->{
+            if (e.containsKey(k)) {
+                int[] raw = e.get(k).clone();
+                int[] addOn = v.clone();
                 for (int i = 0; i < 3; i++) {
                     raw[i] += addOn[i];
                 }
-                e.put(s, raw);
+                e.put(k, raw);
             } else {
-                e.put(s, e2.get(s).clone());
+                e.put(k, v.clone());
             }
-        }
+        });
         return e;
     }
 
@@ -103,30 +110,22 @@ public class SoloRecord extends Record {
         return answer;
     }
 
-    void start(Player p1, Player p2) {
-        inGameOperations = new ArrayList[2];
-        inGameOperations[0] = new ArrayList<>();
-        inGameOperations[1] = new ArrayList<>();
-        this.p1 = p1;
-        this.p2 = p2;
-    }
-
     String hash() {
         return p1.hash() + p2.hash();
     }
 
-    HashMap<String, int[]> getMap(Player target,Player enemy) {
+    HashMap<String, int[]> getMap(Player target, Player enemy) {
         boolean reverse = target.getClass().getName().compareTo(enemy.getClass().getName()) > 0;
-        if(reverse) {
+        if (reverse) {
             p1 = enemy;
             p2 = target;
-        }else {
-            p1=target;
-            p2=enemy;
+        } else {
+            p1 = target;
+            p2 = enemy;
         }
-        HashMap<String, int[]>[] raw=learnMap.get(hash());
+        HashMap<String, int[]>[] raw = learnMap.get(hash());
 
-        return raw==null?null:raw[reverse?1:0];
+        return raw == null ? null : raw[reverse ? 1 : 0];
     }
 
     @Override
@@ -160,7 +159,10 @@ public class SoloRecord extends Record {
         inGameOperations[0] = new ArrayList<>();
         inGameOperations[1] = new ArrayList<>();
     }
-
+    /*
+        Put all the operation players made in this round into the
+        inGameOperations
+     */
     void update() {
         HashMap<String, int[]>[] target = learnMap.get(hash());
         if (target == null) {
@@ -185,7 +187,7 @@ public class SoloRecord extends Record {
 
     @Override
     void flush(int teamId) {
-        //if it is null, then it means draw
+        //if it is 0, then it means draw
         int adds = teamId == 0 ? 1 : teamId == p1.teamId ? 2 : teamId == p2.teamId ? 0 : -100;
         assert adds != -100;
         for (int[] ints : inGameOperations[0]) {
