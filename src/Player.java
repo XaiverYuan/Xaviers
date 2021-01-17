@@ -9,29 +9,43 @@ import java.util.*;
 public abstract class Player implements Serializable {
     private static final long serialVersionUID = Main.serialVersionUID;
     boolean alive;
-    Bot bot;//if this is null then it is played by human, or it is played by ai
-    int teamId;//the id of the team
-    int energy;//use to cast abilities
-    int priority;//highest priority means they move first.
-    private int health;//died when it is <=0
-    /* the reason health is private here is Some kind of player has deduction on damage taken.
+    /*
+        if this is null then it is played by human, or it is played by ai
+     */
+    Bot bot;
+    int teamId;
+    int energy;
+    /*
+        Higher priority means the operation would be cast first
+     */
+    int priority;
+    /*
+        The reason health is private here is some
+        kind of player has deduction on damage taken.
         i.e. Assassin take one less damage.
      */
-    Operation currentOperation;//the operation this round
-    ArrayList<Player> targets;//the target this round
+    private int health;
+    /*
+        The operation they choose to cast this round
+     */
+    Operation currentOperation;
+    ArrayList<Player> targets;
+    /*
+        two basic abilities that all kinds of players should be able to cast
+     */
     static final Operation defend = (i, e) -> {
-        //everyone should be able to defend
         i.defense = true;
         i.priority = 10;
         return i.name + StringConstant.dictionary.get(NameConstant.Defend);
     };
     static final Operation gain = (i, e) -> {
-        //gaining energy
         i.energy++;
         return i.name + StringConstant.dictionary.get(NameConstant.Gain);
     };
-    static HashMap<String, Operation> skillMap;//contains all skills that kind of player has
-
+    /*
+        Contains all kinds of
+     */
+    static HashMap<String, Operation> skillMap;
     static {
         skillMap = new HashMap<>();
         skillMap.put("聚气", gain);
