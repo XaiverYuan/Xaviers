@@ -11,11 +11,23 @@ Currently, the game is not playable online yet. There is two TODOs for this:
 ## Game Structure
 This is a round game every player takes an available operation in one round, and keep doing so until they kill all the player that does not belongs to same team with them
 ## Roles
-### Assassin
+a/b means deal a damage when enemy is not defending, while deal b damage when enemy is defending
+### Assassin/Ninja (name not decided yet)
 Start with 0 energy, 1 health.
+Always take one less damage
 Ability:
-- syunsa 
+- Shunsa
+
+    takes 1 energy, target 1 enemy
+    - a very small possibility to execute a enemy directly
+    - a small possibility deal 10/6 damage
+    - most likely deal 4/1 damage
+    - a small possibility of miss
+- Shuriken
+
+    can be used only once, does not take energy, deal 2/0 damage
 ### Druid
+- 
 ## The structure of the code
 Player is the parent class of all kinds of players(Assassin, Druid...). That is also the core of this game.
 Then the main part would be Game(SoloGame). Other class(record,Bot) is for machine learning. 

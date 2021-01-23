@@ -18,7 +18,7 @@ public abstract class Player implements Serializable {
     /*
         Higher priority means the operation would be cast first
      */
-    int priority;
+    transient int priority;
     /*
         The reason health is private here is some
         kind of player has deduction on damage taken.
@@ -28,8 +28,8 @@ public abstract class Player implements Serializable {
     /*
         The operation they choose to cast this round
      */
-    Operation currentOperation;
-    ArrayList<Player> targets;
+    transient Operation currentOperation;
+    transient ArrayList<Player> targets;
     /*
         two basic abilities that all kinds of players should be able to cast
      */
